@@ -1,8 +1,24 @@
 /* IN THIS FILE WE BUILD THE LOGIC THAT WE NEED TO MANAGE  */
 const Place = require("../models/Place");
 
-const index = () => {
-  Place.find({})
+/* middleware que busca un registro por id */
+const find = (res, req, next) => {
+  Place.findById(req.params.id)
+    .then((place) => {
+      req.place = place;
+      next();
+    })
+    .catch((err) => {
+      next(err);
+    });
+};
+
+const index = (req, res) => {
+  /* Paginacion con mongoose
+  Reicbe varios parametros, "page" que es el numero de pagina en la que se encuentra, el limite 
+  y el orden ascentende o desc...
+  */
+  Place.paginate({}, { page: req.query.page || 1, limit: 1, sort: { _id: -1 } })
     .then((docs) => {
       res.json(docs);
     })
@@ -11,7 +27,7 @@ const index = () => {
     });
 };
 
-const create = () => {
+const create = (req, res) => {
   Place.create({
     title: req.body.title,
     description: req.body.description,
@@ -28,17 +44,11 @@ const create = () => {
     });
 };
 
-const show = () => {
-  Place.findById(req.params.id)
-    .then((docs) => {
-      res.json(docs);
-    })
-    .catch((err) => {
-      res.status(403).json(err);
-    });
+const show = (req, res) => {
+  res.json(req.place);
 };
 
-const update = () => {
+const update = (req, res) => {
   /* array con las variables que tienen el formato del restaurante */
   let attributes = [
     "title",
@@ -49,15 +59,18 @@ const update = () => {
   ];
   /* json object que lleva las variables con sus nuevos atributos */
   let placeParams = {};
-  /* Estariamos iterando y validando cada uno de los de los elementos */
+  /* Estariamos iterando y validando cada uno de los elementos */
   attributes.forEach((attr) => {
     /* este metodo de JS verifica si el elemento del objeto es existente */
     if (Object.prototype.hasOwnProperty.call(req.body, attr)) {
       placeParams[attr] = req.body[attr];
     }
   });
-  /* le pasamos el id y el objeto a actualizar */
-  Place.findByIdAndUpdate(req.params.id, placeParams)
+
+  /* copia los datos de la fuente "placeParams" a req.place, osea que req.place es una copia de placeParams */
+  req.place = Object.assign(req.place, placeParams);
+  req.place
+    .save()
     .then((docs) => {
       res.json(docs);
     })
@@ -66,8 +79,9 @@ const update = () => {
     });
 };
 
-const destroy = () => {
-  Place.findByIdAndRemove(req.params.id)
+const destroy = (req, res) => {
+  req.place
+    .remove()
     .then((docs) => {
       res.status(200).json({});
     })
@@ -82,4 +96,5 @@ module.exports = {
   show,
   update,
   destroy,
+  find,
 };

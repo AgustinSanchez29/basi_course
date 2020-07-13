@@ -9,8 +9,8 @@ router.route("/").get(placesontroller.index).post(placesontroller.create);
 /* -------------------------------------------------------------------- */
 router
   .route("/:id")
-  .get(placesontroller.show)
-  .put(placesontroller.update)
-  .delete(placesontroller.destroy);
+  .get(placesontroller.find, placesontroller.show)
+  .put(placesontroller.find, placesontroller.update)
+  .delete(placesontroller.find, placesontroller.destroy);
 
 module.exports = router;
